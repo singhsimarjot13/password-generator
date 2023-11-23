@@ -2,6 +2,7 @@ import tkinter
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 #Password Generator Project
 count=0
@@ -42,18 +43,43 @@ def password():
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save():
     global ent1,ent2,ent3
+    new_data={ent1.get():{"email":ent2.get(),"password":ent3.get()}}
     if len(ent1.get()) < 1 or len(ent2.get()) < 1  or len(ent3.get()) < 1:
         messagebox.showwarning(title="oops",message="Please don't leave any fields empty!")
     else:
         is_ok=messagebox.askokcancel(title=ent1.get(),message=f"These are details you entered\nwebsite-{ent1.get()}\nemail-{ent2.get()}\npassword-{ent3.get()}\nis it ok to save?")
         if is_ok:
-            with open("data.txt", mode='a') as data:
-                data.write(f"{ent1.get()}   |     {ent2.get()}    |  {ent3.get()}\n")
+            try:
+             with open("data.json", mode='r') as data:
+                existing=json.load(data)
+            except:
+                with open("data.json",mode='w') as data:
+                    json.dump(new_data,data,indent=4)
+            else:
+             existing.update(new_data)
+             with open("data.json",mode='w') as data:
+                    json.dump(existing,data,indent=4)
+
             ent1.delete(0,'end')
             ent3.delete(0,'end')
             ent1.focus()
 def clip():
     pyperclip.copy(password)
+def search():
+    try:
+     with open("data.json") as data:
+        a=json.load(data)
+    except FileNotFoundError:
+        messagebox.showwarning(title="Error", message="No data file found!")
+    except json.JSONDecodeError:
+            messagebox.showwarning(title="Error", message="No data found!")
+    else:
+        if ent1.get() in a:
+            messagebox.showinfo(title="Info",
+                                message=f"Email:{a[ent1.get()]['email']}\nPassword:{a[ent1.get()]['password']}")
+        else:
+            messagebox.showwarning(title="Error", message="No details of website exits!")
+
 
 # ---------------------------- UI SETUP ------------------------------- #
 window=tkinter.Tk()
@@ -68,18 +94,20 @@ label2=tkinter.Label(text="Email/Username")
 label2.grid(column=0,row=2)
 label3=tkinter.Label(text="Password")
 label3.grid(column=0,row=3)
-ent1=tkinter.Entry(width=52)
+ent1=tkinter.Entry(width=33)
 ent1.focus()
-ent1.grid(column=1,row=1,columnspan=2)
+ent1.grid(column=1,row=1)
 ent2=tkinter.Entry(width=52)
 ent2.insert(0,"abcd@gmail.com")
 ent2.grid(column=1,row=2,columnspan=2)
-ent3=tkinter.Entry(width=34)
+ent3=tkinter.Entry(width=33)
 ent3.grid(column=1,row=3)
-button=tkinter.Button(text="Generate Password",highlightthickness=0,width=14,command=password)
-button.grid(column=2,row=3)
+button=tkinter.Button(text="Generate Password",highlightthickness=0,width=15,command=password)
+button.grid(column=2,row=3,padx=2)
 button2=tkinter.Button(text="Add",width=44,highlightthickness=0,command=save)
 button2.grid(column=1,row=4,columnspan=2)
 button3=tkinter.Button(text="🔗",highlightthickness=0,width=2,command=clip)
 button3.grid(column=3,row=3,padx=5)
+button4=tkinter.Button(text="Search",width=15,highlightthickness=0,command=search)
+button4.grid(column=2,row=1,padx=2)
 window.mainloop()
